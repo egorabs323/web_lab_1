@@ -1,5 +1,6 @@
 from django.urls import path
-from . import views, converters
+from . import views
+from . import converters
 from django.urls import register_converter
 
 register_converter(converters.VINConverter, 'vin')
