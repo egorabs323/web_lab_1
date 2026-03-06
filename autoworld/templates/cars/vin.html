@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ title }}</h2>
+
+<div class="vin-block">
+    <p><strong>VIN:</strong> {{ vin_code }}</p>
+    <p><strong>Длина:</strong> {{ vin_code|length }} символов</p>
+    <p><strong>WMI (символы 1–3):</strong> {{ wmi }} — Код производителя</p>
+    <p><strong>VDS (символы 4–9):</strong> {{ vds }} — Описание автомобиля</p>
+    <p><strong>VIS (символы 10–17):</strong> {{ vis }} — Индивидуальная информация</p>
+</div>
+
+<p><a href="{% url 'cars:cars_list' %}">← Вернуться в каталог</a></p>
+{% endblock %}

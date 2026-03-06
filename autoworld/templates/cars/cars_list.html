@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ title }}</h2>
+
+{% if error_info %}
+<div class="error-info">
+    <strong>⚠️ {{ error_info }}</strong>
+</div>
+{% endif %}
+
+{% if filter_info.min_year != 'не указан' or filter_info.max_price != 'не указана' or filter_info.body_type != 'не указан' %}
+<div class="filter-info">
+    <h4>Активные фильтры:</h4>
+    <p>Мин. год: {{ filter_info.min_year }}</p>
+    <p>Макс. цена: {{ filter_info.max_price }}</p>
+    <p>Тип кузова: {{ filter_info.body_type }}</p>
+</div>
+{% endif %}
+
+<p>Доступные марки:</p>
+<ul>
+    {% for b in brands %}
+        <li><a href="{% url 'cars:brand' brand_slug=b.name %}">{{ b.display }}</a></li>
+    {% endfor %}
+</ul>
+
+<p>Пример фильтрации:<br>
+<code>/cars/?min_year=2010&max_price=5000000&body_type=sedan</code></p>
+{% endblock %}

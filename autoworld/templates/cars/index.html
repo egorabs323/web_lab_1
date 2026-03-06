@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ title }}</h2>
+<p>Для просмотра всех автомобилей перейдите по ссылке: <a href="{% url 'cars:cars_list' %}">Все автомобили</a></p>
+<p>Для проверки VIN-кода: <a href="{% url 'cars:vin_check' vin_code='1HGBH41JXMN109186' %}">VIN-проверка</a></p>
+{% endblock %}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Автомобильный каталог{% endblock %}</title>
+    {% load static %}
+    {% load cars_tags %}
+    <link rel="stylesheet" href="{% static 'cars/css/styles.css' %}">
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🚗 Автомобильный каталог</h1>
+        <p>Добро пожаловать в наш каталог автомобилей</p>
+    </div>
+
+    <nav class="menu">
+        <ul>
+            <li><a href="{% url 'cars:index' %}">Главная</a></li>
+            <li><a href="{% url 'cars:cars_list' %}">Все автомобили</a></li>
+            <li><a href="{% url 'cars:vin_check' vin_code='1HGBH41JXMN109186' %}">Проверка VIN</a></li>
+        </ul>
+    </nav>
+
+    <hr>
+
+    {% block content %}{% endblock %}
+
+    <hr>
+    <section>
+        <h3>Марки автомобилей</h3>
+        <ul>
+            {% get_brands as brands %}
+            {% for b in brands %}
+                <li><a href="{% url 'cars:brand' brand_slug=b.name %}">{{ b.display }}</a></li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <footer style="text-align:center; margin-top:20px; color:#777;">
+        &copy; 2026 Автомобильный каталог
+    </footer>
+</div>
+</body>
+</html>
