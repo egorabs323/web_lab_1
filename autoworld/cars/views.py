@@ -52,7 +52,7 @@ def brand(request, brand_slug):
         'honda': ['Civic', 'Accord', 'CR-V'],
     }.get(brand_slug, [])
 
-    return render(request, 'cars/brand.html', {
+    return render(request, 'cars/brand.html',  {
         'title': f'Автомобили марки {brand_obj["display"]}',
         'brand': brand_obj,
         'models': models,
