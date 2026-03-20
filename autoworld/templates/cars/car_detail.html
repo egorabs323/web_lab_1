@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<article class="car-detail">
+    <h1>{{ car.brand }} {{ car.model_name }}</h1>
+
+    <div class="car-info">
+        <p><strong>Год выпуска:</strong> {{ car.year }}</p>
+        <p><strong>Тип кузова:</strong> {{ car.body_type }}</p>
+        <p><strong>Цена:</strong> ${{ car.price }}</p>
+        <p><strong>VIN:</strong> {{ car.vin }}</p>
+        <p><strong>Описание:</strong></p>
+        <p>{{ car.description|linebreaks }}</p>
+        <p><small>Добавлено: {{ car.time_create|date:"d.m.Y H:i" }}</small></p>
+    </div>
+
+    <a href="{% url 'cars:cars_list' %}" class="btn">Назад к списку</a>
+</article>
+{% endblock %}

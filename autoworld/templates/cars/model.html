@@ -1,8 +1,0 @@
-{% extends 'base.html' %}
-
-{% block content %}
-<h2>{{ title }}</h2>
-<p>Это страница модели <strong>{{ model }}</strong> марки <strong>{{ brand.display }}</strong>.</p>
-<p><a href="{% url 'cars:brand' brand_slug=brand.name %}"> Назад к моделям {{ brand.display }}</a></p>
-<p><a href="{% url 'cars:cars_list' %}">← Назад ко всем автомобилям</a></p>
-{% endblock %}

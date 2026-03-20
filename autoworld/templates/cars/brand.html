@@ -1,12 +1,18 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>{{ title }}</h2>
-<p>Модели {{ brand.display }}:</p>
-<ul>
-    {% for m in models %}
-        <li><a href="{% url 'cars:model' brand_slug=brand.name model_slug=m|slugify %}">{{ m }}</a></li>
+<h1>Автомобили марки {{ brand }}</h1>
+
+<div class="cars-list">
+    {% for car in cars %}
+    <div class="car-item">
+        <h3><a href="{{ car.get_absolute_url }}">{{ car.model_name }}</a></h3>
+        <p>{{ car.year }} | {{ car.body_type }} | ${{ car.price }}</p>
+    </div>
+    {% empty %}
+    <p>Автомобили этой марки пока не добавлены.</p>
     {% endfor %}
-</ul>
-<p><a href="{% url 'cars:cars_list' %}"> Назад к списку марок</a></p>
+</div>
+
+<p><a href="{% url 'cars:cars_list' %}">← Назад к списку</a></p>
 {% endblock %}

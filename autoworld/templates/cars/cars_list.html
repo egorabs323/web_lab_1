@@ -1,30 +1,37 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>{{ title }}</h2>
+<h1>{{ title }}</h1>
 
-{% if error_info %}
-<div class="error-info">
-    <strong>  {{ error_info }}</strong>
-</div>
-{% endif %}
+<form method="get" class="filter-form">
+    <label>Год от:
+        <input type="number" name="min_year" value="{{ request.GET.min_year }}" placeholder="2020">
+    </label>
+    <label>Цена до:
+        <input type="number" name="max_price" value="{{ request.GET.max_price }}" placeholder="50000">
+    </label>
+    <label>Тип кузова:
+        <select name="body_type">
+            <option value="">Все</option>
+            {% for bt in body_types %}
+            <option value="{{ bt }}" {% if request.GET.body_type == bt %}selected{% endif %}>{{ bt }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <button type="submit">Применить</button>
+</form>
 
-{% if filter_info.min_year != 'не указан' or filter_info.max_price != 'не указана' or filter_info.body_type != 'не указан' %}
-<div class="filter-info">
-    <h4>Активные фильтры:</h4>
-    <p>Мин. год: {{ filter_info.min_year }}</p>
-    <p>Макс. цена: {{ filter_info.max_price }}</p>
-    <p>Тип кузова: {{ filter_info.body_type }}</p>
-</div>
-{% endif %}
-
-<p>Доступные марки:</p>
-<ul>
-    {% for b in brands %}
-        <li><a href="{% url 'cars:brand' brand_slug=b.name %}">{{ b.display }}</a></li>
+<div class="cars-grid">
+    {% for car in cars %}
+    <div class="car-card">
+        <h3><a href="{{ car.get_absolute_url }}">{{ car.brand }} {{ car.model_name }}</a></h3>
+        <p>Год: {{ car.year }}</p>
+        <p>Цена: ${{ car.price }}</p>
+        <p>Кузов: {{ car.body_type }}</p>
+        <a href="{{ car.get_absolute_url }}" class="btn">Подробнее</a>
+    </div>
+    {% empty %}
+    <p>Автомобили не найдены.</p>
     {% endfor %}
-</ul>
-
-<p>Пример фильтрации:<br>
-<code>/cars/?min_year=2010&max_price=5000000&body_type=sedan</code></p>
+</div>
 {% endblock %}

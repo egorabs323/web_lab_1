@@ -1,7 +1,21 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>{{ title }}</h2>
-<p>Для просмотра всех автомобилей перейдите по ссылке: <a href="{% url 'cars:cars_list' %}">Все автомобили</a></p>
-<p>Для проверки VIN-кода: <a href="{% url 'cars:vin_check' vin_code='1HGBH41JXMN109186' %}">VIN-проверка</a></p>
+<h1>{{ title }}</h1>
+<p>Добро пожаловать в наш каталог автомобилей</p>
+
+<h3>Последние добавленные автомобили:</h3>
+<div class="cars-grid">
+    {% for car in cars %}
+    <div class="car-card">
+        <h3><a href="{{ car.get_absolute_url }}">{{ car.title }}</a></h3>
+        <p>{{ car.brand }} {{ car.model_name }} ({{ car.year }})</p>
+        <p>${{ car.price }}</p>
+    </div>
+    {% empty %}
+    <p>Автомобили пока не добавлены.</p>
+    {% endfor %}
+</div>
+
+<p><a href="{% url 'cars:cars_list' %}">Все автомобили</a></p>
 {% endblock %}

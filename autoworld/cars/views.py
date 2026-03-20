@@ -1,78 +1,79 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
+from .models import Car
 
-VALID_BRANDS = [
-    {'name': 'toyota', 'display': 'Toyota'},
-    {'name': 'bmw', 'display': 'BMW'},
-    {'name': 'mercedes', 'display': 'Mercedes'},
-    {'name': 'audi', 'display': 'Audi'},
-    {'name': 'honda', 'display': 'Honda'},
-]
 
 def index(request):
+    cars = Car.published.all()[:3]
     return render(request, 'cars/index.html', {
         'title': 'Главная страница',
+        'cars': cars,
     })
+
 
 def cars_list(request):
     min_year = request.GET.get('min_year')
     max_price = request.GET.get('max_price')
     body_type = request.GET.get('body_type')
-    error = request.GET.get('error')
+    cars = Car.published.all()
 
-    filter_info = {
-        'min_year': min_year or 'не указан',
-        'max_price': max_price or 'не указана',
-        'body_type': body_type or 'не указан'
-    }
+    if min_year:
+        cars = cars.filter(year__gte=int(min_year))
+    if max_price:
+        cars = cars.filter(price__lte=float(max_price))
+    if body_type:
+        cars = cars.filter(body_type=body_type)
 
-    error_info = None
-    if error == 'invalid_brand':
-        error_info = 'Неверная марка автомобиля! Вы были перенаправлены на эту страницу.'
+    brands = Car.objects.values_list('brand', flat=True).distinct()
+    body_types = Car.objects.values_list('body_type', flat=True).distinct()
 
     return render(request, 'cars/cars_list.html', {
         'title': 'Список всех автомобилей',
-        'filter_info': filter_info,
-        'error_info': error_info,
-        'brands': VALID_BRANDS,
+        'cars': cars,
+        'brands': brands,
+        'body_types': body_types,
+        'filter_info': {
+            'min_year': min_year or 'не указан',
+            'max_price': max_price or 'не указана',
+            'body_type': body_type or 'не указан'
+        }
     })
+
 
 def brand(request, brand_slug):
     brand_slug = brand_slug.lower()
-    brand_obj = next((b for b in VALID_BRANDS if b['name'] == brand_slug), None)
 
-    if not brand_obj:
+    cars = Car.published.filter(brand__iexact=brand_slug)
+
+    if not cars.exists():
         return redirect('cars:cars_list')
 
-    models = {
-        'toyota': ['Camry', 'Corolla', 'RAV4'],
-        'bmw': ['X5', '3 Series', 'i8'],
-        'mercedes': ['C-Class', 'E-Class', 'GLC'],
-        'audi': ['A4', 'Q5', 'R8'],
-        'honda': ['Civic', 'Accord', 'CR-V'],
-    }.get(brand_slug, [])
+    models = cars.values_list('model_name', flat=True).distinct()
 
-    return render(request, 'cars/brand.html',  {
-        'title': f'Автомобили марки {brand_obj["display"]}',
-        'brand': brand_obj,
+    brand_name = cars.first().brand
+
+    return render(request, 'cars/brand.html', {
+        'title': f'Автомобили марки {brand_name}',
+        'brand': brand_name,
+        'cars': cars,
         'models': models,
     })
 
-def model(request, brand_slug, model_slug):
-    brand_slug = brand_slug.lower()
-    brand_obj = next((b for b in VALID_BRANDS if b['name'] == brand_slug), None)
-    if not brand_obj:
-        return redirect('cars:cars_list')
 
-    return render(request, 'cars/model.html', {
-        'title': f'Модель {model_slug.capitalize()} марки {brand_obj["display"]}',
-        'brand': brand_obj,
-        'model': model_slug.capitalize(),
+def car_detail(request, car_slug):
+    car = get_object_or_404(Car.published, slug=car_slug)
+
+    return render(request, 'cars/car_detail.html', {
+        'title': f'{car.brand} {car.model_name}',
+        'car': car,
     })
+
 
 def vin_info(request, vin_code):
     if not vin_code or len(vin_code) != 17:
         return redirect('cars:cars_list')
+
+    car = Car.objects.filter(vin=vin_code).first()
 
     wmi = vin_code[:3]
     vds = vin_code[3:9]
@@ -84,4 +85,5 @@ def vin_info(request, vin_code):
         'wmi': wmi,
         'vds': vds,
         'vis': vis,
+        'car': car,
     })
