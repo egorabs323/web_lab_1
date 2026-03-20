@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from .models import Car
-
+from decimal import Decimal, InvalidOperation
 
 def index(request):
     cars = Car.published.all()[:3]
@@ -15,17 +15,24 @@ def cars_list(request):
     min_year = request.GET.get('min_year')
     max_price = request.GET.get('max_price')
     body_type = request.GET.get('body_type')
+
     cars = Car.published.all()
 
     if min_year:
-        cars = cars.filter(year__gte=int(min_year))
+        try:
+            cars = cars.filter(year__gte=int(min_year))
+        except (ValueError, TypeError):
+            pass
     if max_price:
-        cars = cars.filter(price__lte=float(max_price))
+        try:
+            cars = cars.filter(price__lte=Decimal(max_price))
+        except (ValueError, TypeError, InvalidOperation):
+            pass
     if body_type:
         cars = cars.filter(body_type=body_type)
 
-    brands = Car.objects.values_list('brand', flat=True).distinct()
-    body_types = Car.objects.values_list('body_type', flat=True).distinct()
+    brands = Car.objects.values_list('brand', flat=True).distinct().order_by('brand')
+    body_types = Car.objects.values_list('body_type', flat=True).distinct().order_by('body_type')
 
     return render(request, 'cars/cars_list.html', {
         'title': 'Список всех автомобилей',
