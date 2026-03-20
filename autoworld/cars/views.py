@@ -87,3 +87,20 @@ def vin_info(request, vin_code):
         'vis': vis,
         'car': car,
     })
+
+def brands_list(request):
+    brands = Car.objects.filter(is_published=1).values_list('brand', flat=True).distinct().order_by('brand')
+    brands_data = []
+    for brand in brands:
+        count = Car.objects.filter(brand=brand, is_published=1).count()
+        brands_data.append({
+            'name': brand,
+            'slug': brand.lower().replace(' ', '-'),
+            'display': brand,
+            'count': count
+        })
+
+    return render(request, 'cars/brands_list.html', {
+        'title': 'Все марки автомобилей',
+        'brands': brands_data,
+    })
