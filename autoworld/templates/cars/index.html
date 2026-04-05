@@ -10,6 +10,10 @@
     <div class="car-card">
         <h3><a href="{{ car.get_absolute_url }}">{{ car.title }}</a></h3>
         <p>{{ car.brand }} {{ car.model_name }} ({{ car.year }})</p>
+        {% if car.category %}<p class="category">📁 {{ car.category.name }}</p>{% endif %}
+        {% if car.tags.all %}
+        <p class="tags">🏷️ {% for tag in car.tags.all %}{{ tag.tag }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+        {% endif %}
         <p>${{ car.price }}</p>
     </div>
     {% empty %}
@@ -18,4 +22,16 @@
 </div>
 
 <p><a href="{% url 'cars:cars_list' %}">Все автомобили</a></p>
+
+<!-- БЛОК ДЛЯ СКРИНШОТОВ ОТЧЁТА (скрыт стилями, убери display:none для проверки) -->
+<div style="margin-top:40px; border:1px dashed #ccc; padding:15px; background:#fafafa;">
+    <h4>📊 Демонстрация ORM (для отчёта)</h4>
+    <p><b>Q (ИЛИ):</b> {{ cars_q.count }} авто</p>
+    <p><b>F (сравнение полей):</b> {{ cars_f.count }} авто</p>
+    <p><b>Annotate (длина названия):</b> {% for c in cars_annotated %}{{ c.title }} ({{ c.title_len }}){% endfor %}</p>
+    <p><b>Values:</b> {{ cars_values.0.brand }} - {{ cars_values.0.price }}$</p>
+    <p><b>Aggregate:</b> Среднее: {{ stats.avg_price|default:"0" }}$, Макс. год: {{ stats.max_year }}, Всего: {{ stats.total_cars }}</p>
+    <p><b>first()/last():</b> Первый: {{ first_car }}, Последний: {{ last_car }}</p>
+    <p><b>exists()/count():</b> Есть тег SUV: {{ has_suv_tag }}, Всего опубликовано: {{ total_published }}</p>
+</div>
 {% endblock %}

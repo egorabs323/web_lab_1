@@ -7,6 +7,50 @@ class PublishedCarManager(models.Manager):
         return super().get_queryset().filter(is_published=1)
 
 
+class CarCategory(models.Model):
+    name = models.CharField(max_length=100, db_index=True, verbose_name="Категория")
+    slug = models.SlugField(max_length=255, unique=True, db_index=True, verbose_name="URL")
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse('cars:category', kwargs={'cat_slug': self.slug})
+
+    class Meta:
+        verbose_name = "Категория"
+        verbose_name_plural = "Категории"
+        ordering = ['name']
+
+
+class CarTag(models.Model):
+    tag = models.CharField(max_length=100, db_index=True, verbose_name="Тег")
+    slug = models.SlugField(max_length=255, unique=True, db_index=True, verbose_name="URL")
+
+    def __str__(self):
+        return self.tag
+
+    def get_absolute_url(self):
+        return reverse('cars:tag', kwargs={'tag_slug': self.slug})
+
+    class Meta:
+        verbose_name = "Тег"
+        verbose_name_plural = "Теги"
+
+
+class CarEngine(models.Model):
+    engine_type = models.CharField(max_length=50, verbose_name="Тип двигателя")
+    displacement = models.DecimalField(max_digits=4, decimal_places=1, verbose_name="Объем (л)")
+    horsepower = models.IntegerField(verbose_name="Мощность (л.с.)")
+
+    def __str__(self):
+        return f"{self.engine_type} {self.displacement}L ({self.horsepower} л.с.)"
+
+    class Meta:
+        verbose_name = "Двигатель"
+        verbose_name_plural = "Двигатели"
+
+
 class Car(models.Model):
     class Status(models.IntegerChoices):
         DRAFT = 0, 'Черновик'
@@ -28,6 +72,13 @@ class Car(models.Model):
         default=Status.PUBLISHED,
         verbose_name="Публикация"
     )
+
+    category = models.ForeignKey('CarCategory', on_delete=models.PROTECT,
+                                 related_name='cars', verbose_name="Категория")
+    tags = models.ManyToManyField('CarTag', blank=True, related_name='cars', verbose_name="Теги")
+    engine = models.OneToOneField('CarEngine', on_delete=models.SET_NULL, null=True, blank=True,
+                                  related_name='car', verbose_name="Двигатель")
+
     objects = models.Manager()
     published = PublishedCarManager()
 

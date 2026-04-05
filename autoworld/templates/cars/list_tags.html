@@ -1,0 +1,10 @@
+<ul>
+    {% if cat_selected == 0 %}<li class="selected">Все категории</li>{% endif %}
+    {% for cat in cats %}
+        <li {% if cat.id == cat_selected %}class="selected"{% endif %}>
+            <a href="{{ cat.get_absolute_url }}">{{ cat.name }} ({{ cat.cars_count }})</a>
+        </li>
+    {% empty %}
+        <li>Категорий нет</li>
+    {% endfor %}
+</ul>

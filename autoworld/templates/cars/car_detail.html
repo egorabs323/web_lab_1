@@ -1,14 +1,25 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <article class="car-detail">
     <h1>{{ car.brand }} {{ car.model_name }}</h1>
 
     <div class="car-info">
+        <p><strong>Категория:</strong> <a href="{{ car.category.get_absolute_url }}">{{ car.category.name }}</a></p>
         <p><strong>Год выпуска:</strong> {{ car.year }}</p>
         <p><strong>Тип кузова:</strong> {{ car.body_type }}</p>
         <p><strong>Цена:</strong> ${{ car.price }}</p>
         <p><strong>VIN:</strong> {{ car.vin }}</p>
+
+        {% if car.engine %}
+        <p><strong>Двигатель:</strong> {{ car.engine.engine_type }}, {{ car.engine.displacement }} л., {{ car.engine.horsepower }} л.с.</p>
+        {% endif %}
+
+        <p><strong>Теги:</strong>
+            {% for tag in car.tags.all %}
+                <a href="{{ tag.get_absolute_url }}" class="tag-badge">{{ tag.tag }}</a>
+            {% empty %} Нет тегов {% endfor %}
+        </p>
+
         <p><strong>Описание:</strong></p>
         <p>{{ car.description|linebreaks }}</p>
         <p><small>Добавлено: {{ car.time_create|date:"d.m.Y H:i" }}</small></p>

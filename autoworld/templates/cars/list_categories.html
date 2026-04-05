@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<div class="categories-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px;">
+    {% for category in categories %}
+    <div class="category-card" style="border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f9f9f9;">
+        <h3><a href="{{ category.get_absolute_url }}" style="color: #1976d2; text-decoration: none;">{{ category.name }}</a></h3>
+        <p style="color: #666; margin-top: 10px;">📁 Автомобилей: {{ category.cars_count }}</p>
+        <p style="margin-top: 5px;"><a href="{{ category.get_absolute_url }}" style="color: #4caf50;">Смотреть все →</a></p>
+    </div>
+    {% empty %}
+    <p>Категории пока не добавлены.</p>
+    {% endfor %}
+</div>
+
+<p style="margin-top: 30px;"><a href="{% url 'cars:index' %}">← На главную</a></p>
+{% endblock %}

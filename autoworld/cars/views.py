@@ -1,13 +1,68 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse
-from .models import Car
+from django.db.models import Q, F, Value, Count, Avg, Max, Min, Sum
+from django.db.models.functions import Length
+from .models import Car, CarCategory, CarTag
 from decimal import Decimal, InvalidOperation
+
 
 def index(request):
     cars = Car.published.all()[:3]
-    return render(request, 'cars/index.html', {
+
+    cars_q = Car.published.filter(Q(brand__icontains='toyota') | Q(year__gte=2025))
+
+    cars_f = Car.published.filter(price__gt=F('year') * 100)
+
+    cars_annotated = Car.published.annotate(title_len=Length('title'), is_new=Value(True)).order_by('-price')[:5]
+
+    cars_values = Car.published.values('brand', 'model_name', 'price', 'category__name')[:5]
+
+    stats = Car.published.aggregate(
+        avg_price=Avg('price'),
+        max_year=Max('year'),
+        min_price=Min('price'),
+        total_cars=Count('id')
+    )
+
+    categories_with_count = CarCategory.objects.annotate(cars_count=Count('cars')).filter(cars_count__gt=0)
+
+    first_car = Car.published.first()
+    last_car = Car.published.order_by('-year').last()
+    has_suv_tag = CarTag.objects.filter(slug='suv').exists()
+    total_published = Car.published.count()
+
+    context = {
         'title': 'Главная страница',
         'cars': cars,
+        'cars_q': cars_q,
+        'cars_f': cars_f,
+        'cars_annotated': cars_annotated,
+        'cars_values': cars_values,
+        'stats': stats,
+        'categories_with_count': categories_with_count,
+        'first_car': first_car,
+        'last_car': last_car,
+        'has_suv_tag': has_suv_tag,
+        'total_published': total_published,
+    }
+    return render(request, 'cars/index.html', context)
+
+def show_category(request, cat_slug):
+    category = get_object_or_404(CarCategory, slug=cat_slug)
+    cars = Car.published.filter(category=category)
+    return render(request, 'cars/index.html', {
+        'title': f'Категория: {category.name}',
+        'cars': cars,
+        'cat_selected': category.pk
+    })
+
+
+def show_tag(request, tag_slug):
+    tag = get_object_or_404(CarTag, slug=tag_slug)
+    cars = tag.cars.filter(is_published=Car.Status.PUBLISHED)
+    return render(request, 'cars/index.html', {
+        'title': f'Тег: {tag.tag}',
+        'cars': cars,
+        'tag_selected': tag.pk
     })
 
 
@@ -49,16 +104,11 @@ def cars_list(request):
 
 def brand(request, brand_slug):
     brand_slug = brand_slug.lower()
-
     cars = Car.published.filter(brand__iexact=brand_slug)
-
     if not cars.exists():
         return redirect('cars:cars_list')
-
     models = cars.values_list('model_name', flat=True).distinct()
-
     brand_name = cars.first().brand
-
     return render(request, 'cars/brand.html', {
         'title': f'Автомобили марки {brand_name}',
         'brand': brand_name,
@@ -69,7 +119,6 @@ def brand(request, brand_slug):
 
 def car_detail(request, car_slug):
     car = get_object_or_404(Car.published, slug=car_slug)
-
     return render(request, 'cars/car_detail.html', {
         'title': f'{car.brand} {car.model_name}',
         'car': car,
@@ -79,13 +128,10 @@ def car_detail(request, car_slug):
 def vin_info(request, vin_code):
     if not vin_code or len(vin_code) != 17:
         return redirect('cars:cars_list')
-
     car = Car.objects.filter(vin=vin_code).first()
-
     wmi = vin_code[:3]
     vds = vin_code[3:9]
     vis = vin_code[9:]
-
     return render(request, 'cars/vin.html', {
         'title': 'Информация по VIN-коду',
         'vin_code': vin_code,
@@ -95,19 +141,33 @@ def vin_info(request, vin_code):
         'car': car,
     })
 
+
 def brands_list(request):
     brands = Car.objects.filter(is_published=1).values_list('brand', flat=True).distinct().order_by('brand')
     brands_data = []
     for brand in brands:
         count = Car.objects.filter(brand=brand, is_published=1).count()
         brands_data.append({
-            'name': brand,
+            'name': brand.lower().replace(' ', '-'),
             'slug': brand.lower().replace(' ', '-'),
             'display': brand,
             'count': count
         })
-
     return render(request, 'cars/brands_list.html', {
         'title': 'Все марки автомобилей',
         'brands': brands_data,
+    })
+
+def categories_list(request):
+    categories = CarCategory.objects.annotate(cars_count=Count('cars')).filter(cars_count__gt=0)
+    return render(request, 'cars/categories_list.html', {
+        'title': 'Все категории',
+        'categories': categories,
+    })
+
+def tags_list(request):
+    tags = CarTag.objects.annotate(cars_count=Count('cars')).filter(cars_count__gt=0)
+    return render(request, 'cars/tags_list.html', {
+        'title': 'Все теги',
+        'tags': tags,
     })
