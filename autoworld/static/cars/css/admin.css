@@ -1,0 +1,17 @@
+#header {
+    background: #1976d2;
+}
+
+.module h2, .module caption {
+    background: #2196f3;
+    color: white;
+}
+
+div.breadcrumbs {
+    background: #bbdefb;
+}
+
+.button, input[type=submit] {
+    background: #1976d2;
+    color: white;
+}
