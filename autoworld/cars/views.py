@@ -3,10 +3,10 @@ from django.db.models import Q, F, Value, Count, Avg, Max, Min, Sum
 from django.db.models.functions import Length
 from .models import Car, CarCategory, CarTag
 from decimal import Decimal, InvalidOperation
-from .forms import AddCarForm, AddCarModelForm, UploadFileForm  # обновите импорты
+from .forms import AddCarForm, AddCarModelForm, UploadFileForm
 import uuid
 import os
-from django.conf import settings  # ← добавь этот импорт в начало файла
+from django.conf import settings
 
 def add_car(request):
     if request.method == 'POST':
@@ -32,7 +32,7 @@ def add_car_model(request):
     if request.method == 'POST':
         form = AddCarModelForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()  # автоматически сохраняет в БД
+            form.save()
             return redirect('cars:index')
     else:
         form = AddCarModelForm()
@@ -45,7 +45,6 @@ def add_car_model(request):
 
 
 def upload_file(request):
-    """Загрузка файлов на сервер (Задание 3)"""
     if request.method == 'POST':
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
@@ -64,14 +63,10 @@ def upload_file(request):
 
 
 def handle_uploaded_file(f):
-    """Сохраняет загруженный файл с уникальным именем"""
-    # Создаём абсолютный путь к папке uploads внутри MEDIA_ROOT
     upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
 
-    # Создаём папку, если она не существует
     os.makedirs(upload_dir, exist_ok=True)
 
-    # Генерируем уникальное имя файла
     name = f.name
     ext = ''
     if '.' in name:
@@ -81,12 +76,10 @@ def handle_uploaded_file(f):
     suffix = str(uuid.uuid4())
     filepath = os.path.join(upload_dir, f"{name}_{suffix}{ext}")
 
-    # Сохраняем файл
     with open(filepath, "wb+") as destination:
         for chunk in f.chunks():
             destination.write(chunk)
 
-    # Возвращаем относительный путь для отображения в шаблоне
     return f"uploads/{name}_{suffix}{ext}"
 
 def index(request):

@@ -1,12 +1,9 @@
-# cars/forms.py
 from django import forms
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
 from .models import Car, CarCategory, CarTag, CarEngine
 
-
-# ========== ЗАДАНИЕ 1: Форма, НЕ связанная с моделью ==========
 @deconstructible
 class RussianVinValidator:
     """Валидатор: только латинские буквы, цифры (для VIN)"""
@@ -117,13 +114,11 @@ class AddCarForm(forms.Form):
         widget=forms.CheckboxSelectMultiple
     )
 
-    # Поле для загрузки файла (задание 3)
     file_upload = forms.FileField(
         required=False,
         label="Прикрепить файл"
     )
 
-    # Валидатор для поля title на уровне формы
     def clean_title(self):
         title = self.cleaned_data['title']
         if len(title) > 100:
@@ -179,7 +174,6 @@ class AddCarModelForm(forms.ModelForm):
             'vin': forms.TextInput(attrs={'maxlength': '17'}),
         }
 
-    # Собственный валидатор для поля title
     def clean_title(self):
         title = self.cleaned_data['title']
         if len(title) > 100:

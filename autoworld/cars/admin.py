@@ -45,8 +45,6 @@ class PriceFilter(admin.SimpleListFilter):
 @admin.register(Car)
 class CarAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("brand", "model_name")}
-
-    # ← Добавлено поле car_photo в список отображаемых колонок
     list_display = (
         'brand', 'model_name', 'year',
         'price', 'is_published', 'category',
