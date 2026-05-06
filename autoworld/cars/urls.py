@@ -14,4 +14,7 @@ urlpatterns = [
     path('cars/<slug:brand_slug>/', views.brand, name='brand'),
     path('car/<slug:car_slug>/', views.car_detail, name='car_detail'),
     path('vin/<str:vin_code>/', views.vin_info, name='vin_check'),
+    path('add-car/', views.add_car, name='add_car'),
+    path('add-car-model/', views.add_car_model, name='add_car_model'),
+    path('upload/', views.upload_file, name='upload_file'),
 ]

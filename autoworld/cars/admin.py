@@ -1,5 +1,7 @@
 from django.contrib import admin, messages
+from django.utils.safestring import mark_safe  # ← добавлен импорт для отображения HTML
 from .models import Car, CarCategory, CarTag, CarEngine
+
 
 @admin.register(CarCategory)
 class CarCategoryAdmin(admin.ModelAdmin):
@@ -7,15 +9,18 @@ class CarCategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug')
     search_fields = ('name',)
 
+
 @admin.register(CarTag)
 class CarTagAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("tag",)}
     list_display = ('id', 'tag', 'slug')
     search_fields = ('tag',)
 
+
 @admin.register(CarEngine)
 class CarEngineAdmin(admin.ModelAdmin):
     list_display = ('id', 'engine_type', 'displacement', 'horsepower')
+
 
 class PriceFilter(admin.SimpleListFilter):
     title = 'Цена'
@@ -36,30 +41,33 @@ class PriceFilter(admin.SimpleListFilter):
         if self.value() == 'expensive':
             return queryset.filter(price__gt=3000000)
 
+
 @admin.register(Car)
 class CarAdmin(admin.ModelAdmin):
-
     prepopulated_fields = {"slug": ("brand", "model_name")}
 
+    # ← Добавлено поле car_photo в список отображаемых колонок
     list_display = (
         'brand', 'model_name', 'year',
         'price', 'is_published', 'category',
-        'short_info', 'car_age'
+        'short_info', 'car_age', 'car_photo'
     )
 
     list_display_links = ('brand', 'model_name')
-
     list_editable = ('is_published',)
-
     ordering = ['-time_create', 'price']
-
     list_per_page = 5
-
     search_fields = ('brand', 'model_name', 'vin', 'category__name')
-
     list_filter = ('is_published', 'year', 'body_type', 'category', PriceFilter)
-
     filter_horizontal = ['tags']
+
+    fields = [
+        'title', 'slug', 'brand', 'model_name', 'year',
+        'price', 'body_type', 'vin', 'description',
+        'is_published', 'category', 'engine', 'tags',
+        'photo', 'car_photo'
+    ]
+    readonly_fields = ['car_photo']
 
     @admin.display(description="Кратко")
     def short_info(self, obj):
@@ -69,6 +77,12 @@ class CarAdmin(admin.ModelAdmin):
     def car_age(self, obj):
         from datetime import datetime
         return datetime.now().year - obj.year
+
+    @admin.display(description="Изображение")
+    def car_photo(self, car: Car):
+        if car.photo:
+            return mark_safe(f"<img src='{car.photo.url}' width='80' style='border-radius: 4px;'>")
+        return "Без фото"
 
     @admin.action(description="Опубликовать выбранные")
     def make_published(self, request, queryset):

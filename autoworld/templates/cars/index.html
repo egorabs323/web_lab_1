@@ -8,6 +8,10 @@
 <div class="cars-grid">
     {% for car in cars %}
     <div class="car-card">
+        {% if car.photo %}
+            <p><img src="{{ car.photo.url }}" alt="{{ car.title }}" style="max-width: 100%; height: auto; display: block; margin-bottom: 10px;"></p>
+        {% endif %}
+
         <h3><a href="{{ car.get_absolute_url }}">{{ car.title }}</a></h3>
         <p>{{ car.brand }} {{ car.model_name }} ({{ car.year }})</p>
         {% if car.category %}<p class="category">📁 {{ car.category.name }}</p>{% endif %}
@@ -23,7 +27,6 @@
 
 <p><a href="{% url 'cars:cars_list' %}">Все автомобили</a></p>
 
-<!-- БЛОК ДЛЯ СКРИНШОТОВ ОТЧЁТА (скрыт стилями, убери display:none для проверки) -->
 <div style="margin-top:40px; border:1px dashed #ccc; padding:15px; background:#fafafa;">
     <h4>📊 Демонстрация ORM (для отчёта)</h4>
     <p><b>Q (ИЛИ):</b> {{ cars_q.count }} авто</p>

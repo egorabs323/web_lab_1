@@ -1,7 +1,12 @@
 {% extends 'base.html' %}
 {% block content %}
+
 <article class="car-detail">
     <h1>{{ car.brand }} {{ car.model_name }}</h1>
+
+    {% if car.photo %}
+        <p><img class="img-article-left" src="{{ car.photo.url }}" alt="{{ car.brand }} {{ car.model_name }}" style="max-width: 400px;"></p>
+    {% endif %}
 
     <div class="car-info">
         <p><strong>Категория:</strong> <a href="{{ car.category.get_absolute_url }}">{{ car.category.name }}</a></p>

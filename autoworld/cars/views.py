@@ -3,7 +3,91 @@ from django.db.models import Q, F, Value, Count, Avg, Max, Min, Sum
 from django.db.models.functions import Length
 from .models import Car, CarCategory, CarTag
 from decimal import Decimal, InvalidOperation
+from .forms import AddCarForm, AddCarModelForm, UploadFileForm  # обновите импорты
+import uuid
+import os
+from django.conf import settings  # ← добавь этот импорт в начало файла
 
+def add_car(request):
+    if request.method == 'POST':
+        form = AddCarForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                if 'file_upload' in request.FILES:
+                    handle_uploaded_file(request.FILES['file_upload'])
+                return redirect('cars:index')
+            except Exception as e:
+                form.add_error(None, f"Ошибка добавления: {e}")
+    else:
+        form = AddCarForm()
+
+    return render(request, 'cars/add_car.html', {
+        'title': 'Добавить автомобиль',
+        'form': form,
+        'form_type': 'unbound'
+    })
+
+
+def add_car_model(request):
+    if request.method == 'POST':
+        form = AddCarModelForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()  # автоматически сохраняет в БД
+            return redirect('cars:index')
+    else:
+        form = AddCarModelForm()
+
+    return render(request, 'cars/add_car.html', {
+        'title': 'Добавить автомобиль (модель)',
+        'form': form,
+        'form_type': 'model'
+    })
+
+
+def upload_file(request):
+    """Загрузка файлов на сервер (Задание 3)"""
+    if request.method == 'POST':
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            filepath = handle_uploaded_file(form.cleaned_data['file'])
+            return render(request, 'cars/upload_success.html', {
+                'title': 'Файл загружен',
+                'filepath': filepath
+            })
+    else:
+        form = UploadFileForm()
+
+    return render(request, 'cars/upload_file.html', {
+        'title': 'Загрузить файл',
+        'form': form
+    })
+
+
+def handle_uploaded_file(f):
+    """Сохраняет загруженный файл с уникальным именем"""
+    # Создаём абсолютный путь к папке uploads внутри MEDIA_ROOT
+    upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
+
+    # Создаём папку, если она не существует
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # Генерируем уникальное имя файла
+    name = f.name
+    ext = ''
+    if '.' in name:
+        ext = name[name.rindex('.'):]
+        name = name[:name.rindex('.')]
+
+    suffix = str(uuid.uuid4())
+    filepath = os.path.join(upload_dir, f"{name}_{suffix}{ext}")
+
+    # Сохраняем файл
+    with open(filepath, "wb+") as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
+
+    # Возвращаем относительный путь для отображения в шаблоне
+    return f"uploads/{name}_{suffix}{ext}"
 
 def index(request):
     cars = Car.published.all()[:3]

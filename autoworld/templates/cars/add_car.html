@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>{{ title }}</h1>
+
+<form action="" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+        <div class="form-error">{{ form.non_field_errors }}</div>
+    {% endif %}
+    
+    {% for f in form %}
+        <p>
+            <label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}:</label>
+            {{ f }}
+        </p>
+        {% if f.errors %}
+            <div class="form-error">{{ f.errors }}</div>
+        {% endif %}
+    {% endfor %}
+    
+    <button type="submit">Добавить</button>
+</form>
+
+<a href="{% url 'cars:index' %}">← Назад</a>
+{% endblock %}

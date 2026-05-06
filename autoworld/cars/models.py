@@ -72,6 +72,13 @@ class Car(models.Model):
         default=Status.PUBLISHED,
         verbose_name="Публикация"
     )
+    # >>> ДОБАВЬТЕ ЭТО ПОЛЕ <<<
+    photo = models.ImageField(
+        upload_to="cars/photos/%Y/%m/%d/",
+        blank=True,
+        null=True,
+        verbose_name="Фото автомобиля"
+    )
 
     category = models.ForeignKey('CarCategory', on_delete=models.PROTECT,
                                  related_name='cars', verbose_name="Категория")
