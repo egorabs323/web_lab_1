@@ -6,7 +6,6 @@ from .models import Car, CarCategory, CarTag, CarEngine
 
 @deconstructible
 class RussianVinValidator:
-    """Валидатор: только латинские буквы, цифры (для VIN)"""
     ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
     def __init__(self, message=None):
@@ -18,6 +17,7 @@ class RussianVinValidator:
 
 
 class AddCarForm(forms.Form):
+    multiple_errors = True
     title = forms.CharField(
         max_length=255,
         min_length=5,
@@ -125,16 +125,16 @@ class AddCarForm(forms.Form):
             raise ValidationError('Название не должно превышать 100 символов')
         return title
 
+
 class AddCarModelForm(forms.ModelForm):
+    multiple_errors = True
+
     title = forms.CharField(
         max_length=255,
         min_length=5,
         label="Название",
         widget=forms.TextInput(attrs={'class': 'form-input'}),
-        error_messages={
-            'required': 'Название обязательно',
-            'min_length': 'Минимум 5 символов'
-        }
+        error_messages={'required': 'Название обязательно', 'min_length': 'Минимум 5 символов'}
     )
 
     category = forms.ModelChoiceField(
@@ -157,6 +157,20 @@ class AddCarModelForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple
     )
 
+    # Явно переопределяем VIN, чтобы валидатор гарантированно срабатывал в ModelForm
+    vin = forms.CharField(
+        max_length=17,
+        min_length=17,
+        label="VIN-код",
+        widget=forms.TextInput(attrs={'class': 'form-input', 'maxlength': '17'}),
+        validators=[RussianVinValidator()],
+        error_messages={
+            'required': 'VIN-код обязателен',
+            'min_length': 'VIN-код должен содержать ровно 17 символов',
+            'max_length': 'VIN-код должен содержать ровно 17 символов'
+        }
+    )
+
     class Meta:
         model = Car
         fields = [
@@ -171,7 +185,6 @@ class AddCarModelForm(forms.ModelForm):
         }
         widgets = {
             'description': forms.Textarea(attrs={'cols': 60, 'rows': 5}),
-            'vin': forms.TextInput(attrs={'maxlength': '17'}),
         }
 
     def clean_title(self):
@@ -179,15 +192,6 @@ class AddCarModelForm(forms.ModelForm):
         if len(title) > 100:
             raise ValidationError('Название не должно превышать 100 символов')
         return title
-
-    # Валидатор для VIN-кода
-    def clean_vin(self):
-        vin = self.cleaned_data['vin'].upper()
-        if len(vin) != 17:
-            raise ValidationError('VIN-код должен содержать ровно 17 символов')
-        if not set(vin).issubset(set("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")):
-            raise ValidationError('VIN-код должен содержать только латинские буквы и цифры')
-        return vin
 
 class UploadFileForm(forms.Form):
     file = forms.FileField(label="Выберите файл")
