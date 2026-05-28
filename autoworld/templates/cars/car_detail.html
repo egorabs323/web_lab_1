@@ -31,5 +31,9 @@
     </div>
 
     <a href="{% url 'cars:cars_list' %}" class="btn">Назад к списку</a>
+    <p>
+        <a href="{% url 'cars:car_edit' car_slug=car.slug %}" class="btn">Редактировать</a>
+        <a href="{% url 'cars:car_delete' car_slug=car.slug %}" class="btn">Удалить</a>
+    </p>
 </article>
 {% endblock %}

@@ -99,3 +99,35 @@ body {
 .brand-card .btn:hover {
     background: #0056b3;
 }
+
+.list-pages {
+    margin: 24px 0 10px;
+}
+
+.list-pages ul {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.page-num {
+    min-width: 34px;
+    padding: 8px 10px;
+    border: 1px solid #d0d7de;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.page-num a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+.page-num-selected {
+    background: #0066cc;
+    border-color: #0066cc;
+    color: #fff;
+}

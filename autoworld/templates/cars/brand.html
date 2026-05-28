@@ -16,3 +16,7 @@
 
 <p><a href="{% url 'cars:cars_list' %}">← Назад к списку</a></p>
 {% endblock %}
+
+{% block navigation %}
+{% include 'cars/includes/pagination.html' %}
+{% endblock %}

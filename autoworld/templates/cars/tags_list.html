@@ -17,3 +17,7 @@
 
 <p style="margin-top: 30px;"><a href="{% url 'cars:index' %}">← На главную</a></p>
 {% endblock %}
+
+{% block navigation %}
+{% include 'cars/includes/pagination.html' %}
+{% endblock %}

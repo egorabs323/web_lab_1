@@ -38,3 +38,7 @@
     <p><b>exists()/count():</b> Есть тег SUV: {{ has_suv_tag }}, Всего опубликовано: {{ total_published }}</p>
 </div>
 {% endblock %}
+
+{% block navigation %}
+{% include 'cars/includes/pagination.html' %}
+{% endblock %}
