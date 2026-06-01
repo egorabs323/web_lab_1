@@ -3,11 +3,17 @@
 {% block content %}
 <h1>Автомобили марки {{ brand }}</h1>
 
-<div class="cars-list">
+<div class="cars-grid">
     {% for car in cars %}
-    <div class="car-item">
+    <div class="car-card">
+        {% if car.photo %}
+            <a href="{{ car.get_absolute_url }}">
+                <img class="car-card-photo" src="{{ car.photo.url }}" alt="{{ car.brand }} {{ car.model_name }}">
+            </a>
+        {% endif %}
         <h3><a href="{{ car.get_absolute_url }}">{{ car.model_name }}</a></h3>
         <p>{{ car.year }} | {{ car.body_type }} | ${{ car.price }}</p>
+        <a href="{{ car.get_absolute_url }}" class="btn">Подробнее</a>
     </div>
     {% empty %}
     <p>Автомобили этой марки пока не добавлены.</p>

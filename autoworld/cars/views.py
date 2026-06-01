@@ -3,6 +3,7 @@ import uuid
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import Q, F, Value, Count, Avg, Max, Min
 from django.db.models.functions import Length
 from django.shortcuts import get_object_or_404, redirect, render
@@ -18,7 +19,7 @@ from django.views.generic import (
     DeleteView,
 )
 
-from .forms import AddCarForm, AddCarModelForm, UploadFileForm
+from .forms import AddCarForm, AddCarModelForm, UploadFileForm, VinCheckForm
 from .models import Car, CarCategory, CarTag
 
 
@@ -75,7 +76,8 @@ class CarsHome(DataMixin, ListView):
         )
 
 
-class AddCarPage(DataMixin, View):
+class AddCarPage(PermissionRequiredMixin, DataMixin, View):
+    permission_required = 'cars.add_car'
     title_page = 'Добавить автомобиль'
     template_name = 'cars/add_car.html'
 
@@ -102,7 +104,8 @@ class AddCarPage(DataMixin, View):
         return render(request, self.template_name, context)
 
 
-class AddCarModelPage(DataMixin, CreateView):
+class AddCarModelPage(PermissionRequiredMixin, DataMixin, CreateView):
+    permission_required = 'cars.add_car'
     form_class = AddCarModelForm
     template_name = 'cars/add_car.html'
     success_url = reverse_lazy('cars:index')
@@ -113,7 +116,8 @@ class AddCarModelPage(DataMixin, CreateView):
         return self.get_mixin_context(context, form_type='model')
 
 
-class UpdateCarPage(DataMixin, UpdateView):
+class UpdateCarPage(PermissionRequiredMixin, DataMixin, UpdateView):
+    permission_required = 'cars.change_car'
     model = Car
     form_class = AddCarModelForm
     template_name = 'cars/add_car.html'
@@ -128,7 +132,8 @@ class UpdateCarPage(DataMixin, UpdateView):
         return self.get_mixin_context(context, form_type='model')
 
 
-class DeleteCarPage(DataMixin, DeleteView):
+class DeleteCarPage(PermissionRequiredMixin, DataMixin, DeleteView):
+    permission_required = 'cars.delete_car'
     model = Car
     template_name = 'cars/car_confirm_delete.html'
     slug_url_kwarg = 'car_slug'
@@ -136,7 +141,7 @@ class DeleteCarPage(DataMixin, DeleteView):
     title_page = 'Удаление автомобиля'
 
 
-class UploadFilePage(DataMixin, FormView):
+class UploadFilePage(LoginRequiredMixin, DataMixin, FormView):
     form_class = UploadFileForm
     template_name = 'cars/upload_file.html'
     title_page = 'Загрузить файл'
@@ -266,23 +271,37 @@ class BrandCarsPage(DataMixin, ListView):
 
 class VinInfoPage(DataMixin, TemplateView):
     template_name = 'cars/vin.html'
+    title_page = 'Проверка VIN-кода'
 
-    def get(self, request, *args, **kwargs):
-        if not self.kwargs['vin_code'] or len(self.kwargs['vin_code']) != 17:
-            return redirect('cars:cars_list')
-        return super().get(request, *args, **kwargs)
+    def post(self, request, *args, **kwargs):
+        form = VinCheckForm(request.POST)
+        if form.is_valid():
+            return self.render_to_response(self.get_vin_context(form.cleaned_data['vin_code'], form))
+        return self.render_to_response(self.get_mixin_context({}, form=form))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        vin_code = self.kwargs['vin_code']
+        vin_code = self.kwargs.get('vin_code') or self.request.GET.get('vin_code')
+        if not vin_code:
+            return self.get_mixin_context(context, form=VinCheckForm())
+
+        form = VinCheckForm({'vin_code': vin_code})
+        if not form.is_valid():
+            return self.get_mixin_context(context, form=form)
+
+        return self.get_vin_context(form.cleaned_data['vin_code'], form, context)
+
+    def get_vin_context(self, vin_code, form, context=None):
+        context = context or {}
         return self.get_mixin_context(
             context,
-            title='Информация по VIN-коду',
+            form=form,
             vin_code=vin_code,
             wmi=vin_code[:3],
             vds=vin_code[3:9],
             vis=vin_code[9:],
             car=Car.objects.filter(vin=vin_code).first(),
+            checked=True,
         )
 
 

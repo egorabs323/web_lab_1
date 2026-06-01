@@ -3,6 +3,22 @@
 {% block content %}
 <h1>{{ title }}</h1>
 
+<form method="post" class="vin-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+        <div class="form-error">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <div class="vin-input-row">
+        <label class="form-label" for="{{ form.vin_code.id_for_label }}">{{ form.vin_code.label }}:</label>
+        {{ form.vin_code }}
+        <button type="submit">Проверить VIN</button>
+    </div>
+    {% if form.vin_code.errors %}
+        <div class="form-error">{{ form.vin_code.errors }}</div>
+    {% endif %}
+</form>
+
+{% if checked %}
 <div class="vin-block">
     <p><strong>VIN:</strong> {{ vin_code }}</p>
     <p><strong>WMI:</strong> {{ wmi }}</p>
@@ -18,6 +34,7 @@
     <p class="error">Автомобиль с таким VIN не найден в базе.</p>
     {% endif %}
 </div>
+{% endif %}
 
 <p><a href="{% url 'cars:cars_list' %}">← Вернуться в каталог</a></p>
 {% endblock %}

@@ -203,3 +203,28 @@ class UploadFileForm(forms.Form):
 
 class UploadImageForm(forms.Form):
     image = forms.ImageField(label="Выберите изображение")
+
+
+class VinCheckForm(forms.Form):
+    vin_code = forms.CharField(
+        label="VIN-код",
+        min_length=17,
+        max_length=17,
+        widget=forms.TextInput(attrs={
+            'class': 'form-input',
+            'maxlength': '17',
+            'placeholder': 'Например: 1HGBH41JXMN109186',
+        }),
+        error_messages={
+            'required': 'Введите VIN-код',
+            'min_length': 'VIN-код должен содержать ровно 17 символов',
+            'max_length': 'VIN-код должен содержать ровно 17 символов',
+        }
+    )
+
+    def clean_vin_code(self):
+        vin_code = self.cleaned_data['vin_code'].strip().upper()
+        allowed_chars = set('ABCDEFGHJKLMNPRSTUVWXYZ0123456789')
+        if not set(vin_code).issubset(allowed_chars):
+            raise ValidationError('VIN-код должен содержать латинские буквы и цифры, кроме I, O, Q')
+        return vin_code

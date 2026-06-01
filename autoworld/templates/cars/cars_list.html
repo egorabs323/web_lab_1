@@ -24,6 +24,11 @@
 <div class="cars-grid">
     {% for car in cars %}
     <div class="car-card">
+        {% if car.photo %}
+            <a href="{{ car.get_absolute_url }}">
+                <img class="car-card-photo" src="{{ car.photo.url }}" alt="{{ car.brand }} {{ car.model_name }}">
+            </a>
+        {% endif %}
         <h3><a href="{{ car.get_absolute_url }}">{{ car.brand }} {{ car.model_name }}</a></h3>
         <p>Год: {{ car.year }}</p>
         <p>Цена: ${{ car.price }}</p>

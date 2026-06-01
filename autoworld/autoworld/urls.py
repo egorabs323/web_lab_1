@@ -8,6 +8,7 @@ admin.site.index_title = "Управление автосалоном"
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('users/', include('users.urls', namespace='users')),
     path('', include('cars.urls')),
 ]
 

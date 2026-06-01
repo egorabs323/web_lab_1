@@ -47,24 +47,43 @@
         <p>Добро пожаловать в наш каталог автомобилей</p>
     </div>
 
-    <nav class="menu">
-        <ul>
-            <li><a href="{% url 'cars:index' %}">Главная</a></li>
-            <li><a href="{% url 'cars:brands_list' %}">Марки</a></li>
-            <li><a href="{% url 'cars:cars_list' %}">Все автомобили</a></li>
-            <li><a href="{% url 'cars:categories_list' %}">Категории</a></li>
-            <li><a href="{% url 'cars:tags_list' %}">Теги</a></li>
-            <li><a href="{% url 'cars:vin_check' vin_code='1HGBH41JXMN109186' %}">Проверка VIN</a></li>
-            <li><a href="{% url 'cars:add_car' %}">Добавить авто (форма)</a></li>
-            <li><a href="{% url 'cars:add_car_model' %}">Добавить авто (модель)</a></li>
-            <li><a href="{% url 'cars:upload_file' %}">Загрузить файл</a></li>
-        </ul>
-    </nav>
+    <div class="top-bar">
+        <nav class="menu">
+            <ul>
+                <li><a href="{% url 'cars:index' %}">Главная</a></li>
+                <li><a href="{% url 'cars:brands_list' %}">Марки</a></li>
+                <li><a href="{% url 'cars:cars_list' %}">Все автомобили</a></li>
+                <li><a href="{% url 'cars:categories_list' %}">Категории</a></li>
+                <li><a href="{% url 'cars:tags_list' %}">Теги</a></li>
+                <li><a href="{% url 'cars:vin_check' %}">Проверка VIN</a></li>
+                <li><a href="{% url 'cars:add_car' %}">Добавить авто (форма)</a></li>
+                <li><a href="{% url 'cars:add_car_model' %}">Добавить авто (модель)</a></li>
+                <li><a href="{% url 'cars:upload_file' %}">Загрузить файл</a></li>
+            </ul>
+        </nav>
+
+        <div class="user-actions">
+            {% if user.is_authenticated %}
+                <a href="{% url 'users:profile' %}">Профиль</a>
+                <form action="{% url 'users:logout' %}" method="post" class="logout-form">
+                    {% csrf_token %}
+                    <button type="submit">Выйти</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
 
     <hr>
 
     <div class="content-wrapper">
         <main class="main-content">
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="message {{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
             {% block content %}{% endblock %}
             {% block navigation %}{% endblock %}
         </main>

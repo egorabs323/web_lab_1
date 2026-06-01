@@ -32,8 +32,12 @@
 
     <a href="{% url 'cars:cars_list' %}" class="btn">Назад к списку</a>
     <p>
+        {% if perms.cars.change_car %}
         <a href="{% url 'cars:car_edit' car_slug=car.slug %}" class="btn">Редактировать</a>
+        {% endif %}
+        {% if perms.cars.delete_car %}
         <a href="{% url 'cars:car_delete' car_slug=car.slug %}" class="btn">Удалить</a>
+        {% endif %}
     </p>
 </article>
 {% endblock %}
