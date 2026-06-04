@@ -1,7 +1,0 @@
-{% extends 'base.html' %}
-{% block content %}
-<h1>Файл успешно загружен!</h1>
-<p>Путь к файлу: {{ filepath }}</p>
-<a href="{% url 'cars:upload_file' %}">Загрузить ещё</a> |
-<a href="{% url 'cars:index' %}">На главную</a>
-{% endblock %}
