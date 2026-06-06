@@ -56,9 +56,10 @@
                 <li><a href="{% url 'cars:categories_list' %}">Категории</a></li>
                 <li><a href="{% url 'cars:tags_list' %}">Теги</a></li>
                 <li><a href="{% url 'cars:vin_check' %}">Проверка VIN</a></li>
-                <li><a href="{% url 'cars:add_car' %}">Добавить авто (форма)</a></li>
-                <li><a href="{% url 'cars:add_car_model' %}">Добавить авто (модель)</a></li>
+                {% if user.is_authenticated %}
+                <li><a href="{% url 'cars:add_car' %}">Добавить авто</a></li>
                 <li><a href="{% url 'cars:upload_file' %}">Загрузить файл</a></li>
+                {% endif %}
             </ul>
         </nav>
 
@@ -69,6 +70,9 @@
                     {% csrf_token %}
                     <button type="submit">Выйти</button>
                 </form>
+            {% else %}
+                <a href="{% url 'users:login' %}">Войти</a>
+                <a href="{% url 'users:register' %}">Регистрация</a>
             {% endif %}
         </div>
     </div>

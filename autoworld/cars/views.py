@@ -3,9 +3,11 @@ import uuid
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.db.models import Q, F, Value, Count, Avg, Max, Min
-from django.db.models.functions import Length
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.views import redirect_to_login
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views import View
@@ -19,8 +21,8 @@ from django.views.generic import (
     DeleteView,
 )
 
-from .forms import AddCarForm, AddCarModelForm, UploadFileForm, VinCheckForm
-from .models import Car, CarCategory, CarTag
+from .forms import AddCarForm, AddCarModelForm, CarCommentForm, UploadFileForm, VinCheckForm
+from .models import Car, CarCategory, CarComment, CarReaction, CarTag
 
 
 class DataMixin:
@@ -43,38 +45,48 @@ class DataMixin:
         return context
 
 
+class OwnerOrPermissionRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    raise_exception = True
+
+    def test_func(self):
+        car = self.get_object()
+        return car.owner_id == self.request.user.id
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect_to_login(
+                self.request.get_full_path(),
+                self.get_login_url(),
+                self.get_redirect_field_name(),
+            )
+        return super().handle_no_permission()
+
+
+class CommentAuthorRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    model = CarComment
+    pk_url_kwarg = 'comment_pk'
+    raise_exception = True
+
+    def test_func(self):
+        comment = self.get_object()
+        return comment.author_id == self.request.user.id
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect_to_login(
+                self.request.get_full_path(),
+                self.get_login_url(),
+                self.get_redirect_field_name(),
+            )
+        return super().handle_no_permission()
+
+
 class CarsHome(DataMixin, ListView):
     template_name = 'cars/index.html'
     title_page = 'Главная страница'
 
     def get_queryset(self):
         return Car.published.select_related('category', 'engine').prefetch_related('tags')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        stats = Car.published.aggregate(
-            avg_price=Avg('price'),
-            max_year=Max('year'),
-            min_price=Min('price'),
-            total_cars=Count('id')
-        )
-        return self.get_mixin_context(
-            context,
-            cars_q=Car.published.filter(Q(brand__icontains='toyota') | Q(year__gte=2025)),
-            cars_f=Car.published.filter(price__gt=F('year') * 100),
-            cars_annotated=Car.published.annotate(
-                title_len=Length('title'),
-                is_new=Value(True)
-            ).order_by('-price')[:5],
-            cars_values=Car.published.values('brand', 'model_name', 'price', 'category__name')[:5],
-            stats=stats,
-            categories_with_count=CarCategory.objects.annotate(cars_count=Count('cars')).filter(cars_count__gt=0),
-            first_car=Car.published.first(),
-            last_car=Car.published.order_by('-year').last(),
-            has_suv_tag=CarTag.objects.filter(slug='suv').exists(),
-            total_published=Car.published.count(),
-        )
-
 
 class AddCarPage(PermissionRequiredMixin, DataMixin, View):
     permission_required = 'cars.add_car'
@@ -104,20 +116,23 @@ class AddCarPage(PermissionRequiredMixin, DataMixin, View):
         return render(request, self.template_name, context)
 
 
-class AddCarModelPage(PermissionRequiredMixin, DataMixin, CreateView):
-    permission_required = 'cars.add_car'
+class AddCarModelPage(LoginRequiredMixin, DataMixin, CreateView):
     form_class = AddCarModelForm
     template_name = 'cars/add_car.html'
     success_url = reverse_lazy('cars:index')
-    title_page = 'Добавить автомобиль (модель)'
+    title_page = 'Добавить автомобиль'
+
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        messages.success(self.request, 'Автомобиль добавлен.')
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return self.get_mixin_context(context, form_type='model')
 
 
-class UpdateCarPage(PermissionRequiredMixin, DataMixin, UpdateView):
-    permission_required = 'cars.change_car'
+class UpdateCarPage(OwnerOrPermissionRequiredMixin, DataMixin, UpdateView):
     model = Car
     form_class = AddCarModelForm
     template_name = 'cars/add_car.html'
@@ -132,8 +147,7 @@ class UpdateCarPage(PermissionRequiredMixin, DataMixin, UpdateView):
         return self.get_mixin_context(context, form_type='model')
 
 
-class DeleteCarPage(PermissionRequiredMixin, DataMixin, DeleteView):
-    permission_required = 'cars.delete_car'
+class DeleteCarPage(OwnerOrPermissionRequiredMixin, DataMixin, DeleteView):
     model = Car
     template_name = 'cars/car_confirm_delete.html'
     slug_url_kwarg = 'car_slug'
@@ -163,11 +177,104 @@ class CarDetailPage(DataMixin, DetailView):
     slug_url_kwarg = 'car_slug'
 
     def get_queryset(self):
-        return Car.published.select_related('category', 'engine').prefetch_related('tags')
+        return Car.published.select_related('category', 'engine', 'owner').prefetch_related('tags', 'comments__author')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        return self.get_mixin_context(context, title=f'{self.object.brand} {self.object.model_name}')
+        user_reaction = None
+        if self.request.user.is_authenticated:
+            user_reaction = self.object.reactions.filter(user=self.request.user).first()
+
+        return self.get_mixin_context(
+            context,
+            title=f'{self.object.brand} {self.object.model_name}',
+            comment_form=CarCommentForm(),
+            comments=self.object.comments.filter(is_active=True).select_related('author'),
+            likes_count=self.object.reactions.filter(value=CarReaction.Value.LIKE).count(),
+            dislikes_count=self.object.reactions.filter(value=CarReaction.Value.DISLIKE).count(),
+            user_reaction=user_reaction,
+            can_edit_car=(
+                self.request.user.is_authenticated and
+                self.object.owner_id == self.request.user.id
+            ),
+            can_delete_car=(
+                self.request.user.is_authenticated and
+                self.object.owner_id == self.request.user.id
+            ),
+        )
+
+
+class AddCommentPage(LoginRequiredMixin, View):
+    def post(self, request, car_slug):
+        car = get_object_or_404(Car.published, slug=car_slug)
+        form = CarCommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.car = car
+            comment.author = request.user
+            comment.save()
+            messages.success(request, 'Комментарий добавлен.')
+        else:
+            messages.error(request, 'Не удалось добавить комментарий.')
+        return redirect(car.get_absolute_url())
+
+
+class UpdateCommentPage(CommentAuthorRequiredMixin, DataMixin, UpdateView):
+    form_class = CarCommentForm
+    template_name = 'cars/comment_form.html'
+    title_page = 'Редактирование комментария'
+
+    def get_success_url(self):
+        messages.success(self.request, 'Комментарий обновлен.')
+        return self.object.car.get_absolute_url()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return self.get_mixin_context(context, car=self.object.car)
+
+
+class DeleteCommentPage(CommentAuthorRequiredMixin, DataMixin, DeleteView):
+    template_name = 'cars/comment_confirm_delete.html'
+    title_page = 'Удаление комментария'
+
+    def get_success_url(self):
+        messages.success(self.request, 'Комментарий удален.')
+        return self.object.car.get_absolute_url()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return self.get_mixin_context(context, car=self.object.car)
+
+
+class ToggleReactionPage(LoginRequiredMixin, View):
+    reaction_values = {
+        'like': CarReaction.Value.LIKE,
+        'dislike': CarReaction.Value.DISLIKE,
+    }
+
+    def post(self, request, car_slug):
+        car = get_object_or_404(Car.published, slug=car_slug)
+        reaction_value = self.reaction_values.get(request.POST.get('reaction'))
+
+        if reaction_value is None:
+            messages.error(request, 'Неизвестная реакция.')
+            return redirect(car.get_absolute_url())
+
+        reaction, created = CarReaction.objects.get_or_create(
+            car=car,
+            user=request.user,
+            defaults={'value': reaction_value},
+        )
+
+        if not created and reaction.value == reaction_value:
+            reaction.delete()
+            messages.info(request, 'Реакция удалена.')
+        else:
+            reaction.value = reaction_value
+            reaction.save(update_fields=['value', 'time_update'])
+            messages.success(request, 'Реакция сохранена.')
+
+        return redirect(car.get_absolute_url())
 
 
 class CarsListPage(DataMixin, ListView):

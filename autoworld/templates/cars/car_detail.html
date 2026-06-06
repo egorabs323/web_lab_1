@@ -27,15 +27,65 @@
 
         <p><strong>Описание:</strong></p>
         <p>{{ car.description|linebreaks }}</p>
+        {% if car.owner %}
+        <p><strong>Автор:</strong> {{ car.owner.get_username }}</p>
+        {% endif %}
         <p><small>Добавлено: {{ car.time_create|date:"d.m.Y H:i" }}</small></p>
     </div>
 
+    <section class="car-reactions">
+        {% if user.is_authenticated %}
+        <form action="{% url 'cars:car_reaction' car_slug=car.slug %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" name="reaction" value="like" class="btn{% if user_reaction.value == 1 %} active{% endif %}">
+                Лайк ({{ likes_count }})
+            </button>
+        </form>
+        <form action="{% url 'cars:car_reaction' car_slug=car.slug %}" method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" name="reaction" value="dislike" class="btn{% if user_reaction.value == -1 %} active{% endif %}">
+                Дизлайк ({{ dislikes_count }})
+            </button>
+        </form>
+        {% else %}
+            <p>Лайки: {{ likes_count }} · Дизлайки: {{ dislikes_count }}</p>
+        {% endif %}
+    </section>
+
+    <section class="comments">
+        <h2>Комментарии</h2>
+        {% for comment in comments %}
+            <div class="comment">
+                <p><strong>{{ comment.author.get_username }}</strong>
+                    <small>{{ comment.time_create|date:"d.m.Y H:i" }}</small></p>
+                <p>{{ comment.text|linebreaks }}</p>
+                {% if comment.author_id == user.id %}
+                    <p class="comment-actions">
+                        <a href="{% url 'cars:comment_edit' comment_pk=comment.pk %}" class="btn">Редактировать</a>
+                        <a href="{% url 'cars:comment_delete' comment_pk=comment.pk %}" class="btn">Удалить</a>
+                    </p>
+                {% endif %}
+            </div>
+        {% empty %}
+            <p>Комментариев пока нет.</p>
+        {% endfor %}
+
+        {% if user.is_authenticated %}
+            <h3>Добавить комментарий</h3>
+            <form action="{% url 'cars:car_comment' car_slug=car.slug %}" method="post">
+                {% csrf_token %}
+                {{ comment_form.as_p }}
+                <button type="submit" class="btn">Отправить</button>
+            </form>
+        {% endif %}
+    </section>
+
     <a href="{% url 'cars:cars_list' %}" class="btn">Назад к списку</a>
     <p>
-        {% if perms.cars.change_car %}
+        {% if can_edit_car %}
         <a href="{% url 'cars:car_edit' car_slug=car.slug %}" class="btn">Редактировать</a>
         {% endif %}
-        {% if perms.cars.delete_car %}
+        {% if can_delete_car %}
         <a href="{% url 'cars:car_delete' car_slug=car.slug %}" class="btn">Удалить</a>
         {% endif %}
     </p>

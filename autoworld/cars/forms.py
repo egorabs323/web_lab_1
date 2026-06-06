@@ -2,7 +2,7 @@ from django import forms
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.core.exceptions import ValidationError
 from django.utils.deconstruct import deconstructible
-from .models import Car, CarCategory, CarTag, CarEngine
+from .models import Car, CarCategory, CarComment, CarTag, CarEngine
 
 @deconstructible
 class RussianVinValidator:
@@ -129,6 +129,28 @@ class AddCarForm(forms.Form):
 class AddCarModelForm(forms.ModelForm):
     multiple_errors = True
 
+    year = forms.IntegerField(
+        min_value=0,
+        label="Год выпуска",
+        error_messages={
+            'required': 'Год выпуска обязателен',
+            'invalid': 'Введите целое число',
+            'min_value': 'Год выпуска не может быть отрицательным',
+        }
+    )
+
+    price = forms.DecimalField(
+        min_value=0,
+        max_digits=10,
+        decimal_places=2,
+        label="Цена",
+        error_messages={
+            'required': 'Цена обязательна',
+            'invalid': 'Введите корректную цену',
+            'min_value': 'Цена не может быть отрицательной',
+        }
+    )
+
     title = forms.CharField(
         max_length=255,
         min_length=5,
@@ -192,6 +214,18 @@ class AddCarModelForm(forms.ModelForm):
         if len(title) > 100:
             raise ValidationError('Название не должно превышать 100 символов')
         return title
+
+
+class CarCommentForm(forms.ModelForm):
+    class Meta:
+        model = CarComment
+        fields = ['text']
+        labels = {
+            'text': 'Комментарий',
+        }
+        widgets = {
+            'text': forms.Textarea(attrs={'cols': 60, 'rows': 4, 'placeholder': 'Напишите комментарий'}),
+        }
 
 class UploadFileForm(forms.Form):
     file = forms.FileField(label="Выберите файл")

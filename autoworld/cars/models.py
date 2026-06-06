@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.urls import reverse
 
@@ -60,8 +62,16 @@ class Car(models.Model):
     slug = models.SlugField(max_length=255, unique=True, db_index=True, verbose_name="URL")
     brand = models.CharField(max_length=100, verbose_name="Марка")
     model_name = models.CharField(max_length=100, verbose_name="Модель")
-    year = models.IntegerField(verbose_name="Год выпуска")
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена")
+    year = models.IntegerField(
+        validators=[MinValueValidator(0)],
+        verbose_name="Год выпуска"
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        verbose_name="Цена"
+    )
     body_type = models.CharField(max_length=50, verbose_name="Тип кузова")
     vin = models.CharField(max_length=17, unique=True, verbose_name="VIN-код")
     description = models.TextField(blank=True, verbose_name="Описание")
@@ -85,6 +95,15 @@ class Car(models.Model):
     engine = models.OneToOneField('CarEngine', on_delete=models.SET_NULL, null=True, blank=True,
                                   related_name='car', verbose_name="Двигатель")
 
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cars',
+        verbose_name="Автор"
+    )
+
     objects = models.Manager()
     published = PublishedCarManager()
 
@@ -103,3 +122,42 @@ class Car(models.Model):
 
     def get_absolute_url(self):
         return reverse('cars:car_detail', kwargs={'car_slug': self.slug})
+
+
+class CarComment(models.Model):
+    car = models.ForeignKey(Car, on_delete=models.CASCADE, related_name='comments', verbose_name="Автомобиль")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='car_comments',
+                               verbose_name="Автор")
+    text = models.TextField(max_length=1000, verbose_name="Комментарий")
+    time_create = models.DateTimeField(auto_now_add=True, verbose_name="Время создания")
+    is_active = models.BooleanField(default=True, verbose_name="Показывать")
+
+    class Meta:
+        ordering = ['time_create']
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        return f'{self.author}: {self.text[:40]}'
+
+
+class CarReaction(models.Model):
+    class Value(models.IntegerChoices):
+        DISLIKE = -1, 'Дизлайк'
+        LIKE = 1, 'Лайк'
+
+    car = models.ForeignKey(Car, on_delete=models.CASCADE, related_name='reactions', verbose_name="Автомобиль")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='car_reactions',
+                             verbose_name="Пользователь")
+    value = models.SmallIntegerField(choices=Value.choices, verbose_name="Оценка")
+    time_update = models.DateTimeField(auto_now=True, verbose_name="Время изменения")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['car', 'user'], name='unique_car_reaction')
+        ]
+        verbose_name = 'Реакция'
+        verbose_name_plural = 'Реакции'
+
+    def __str__(self):
+        return f'{self.user} -> {self.car}: {self.get_value_display()}'

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<form method="post">
+    {% csrf_token %}
+    <p>Удалить комментарий?</p>
+    <blockquote>{{ object.text|linebreaks }}</blockquote>
+    <button type="submit" class="btn">Удалить</button>
+    <a href="{{ car.get_absolute_url }}" class="btn">Отмена</a>
+</form>
+{% endblock %}

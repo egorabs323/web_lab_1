@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 from django.utils.safestring import mark_safe  # ← добавлен импорт для отображения HTML
-from .models import Car, CarCategory, CarTag, CarEngine
+from .models import Car, CarCategory, CarComment, CarReaction, CarTag, CarEngine
 
 
 @admin.register(CarCategory)
@@ -48,7 +48,7 @@ class CarAdmin(admin.ModelAdmin):
     list_display = (
         'brand', 'model_name', 'year',
         'price', 'is_published', 'category',
-        'short_info', 'car_age', 'car_photo'
+        'owner', 'short_info', 'car_age', 'car_photo'
     )
 
     list_display_links = ('brand', 'model_name')
@@ -62,7 +62,7 @@ class CarAdmin(admin.ModelAdmin):
     fields = [
         'title', 'slug', 'brand', 'model_name', 'year',
         'price', 'body_type', 'vin', 'description',
-        'is_published', 'category', 'engine', 'tags',
+        'is_published', 'owner', 'category', 'engine', 'tags',
         'photo', 'car_photo'
     ]
     readonly_fields = ['car_photo']
@@ -93,3 +93,17 @@ class CarAdmin(admin.ModelAdmin):
         self.message_user(request, f"Снято: {count}", messages.WARNING)
 
     actions = ['make_published', 'make_unpublished']
+
+
+@admin.register(CarComment)
+class CarCommentAdmin(admin.ModelAdmin):
+    list_display = ('car', 'author', 'time_create', 'is_active')
+    list_filter = ('is_active', 'time_create')
+    search_fields = ('text', 'car__brand', 'car__model_name', 'author__username')
+
+
+@admin.register(CarReaction)
+class CarReactionAdmin(admin.ModelAdmin):
+    list_display = ('car', 'user', 'value', 'time_update')
+    list_filter = ('value', 'time_update')
+    search_fields = ('car__brand', 'car__model_name', 'user__username')
